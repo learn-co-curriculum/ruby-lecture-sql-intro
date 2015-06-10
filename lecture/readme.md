@@ -1,49 +1,145 @@
-# Prerequisites
+why databases? why do we need to learn sql?
+with the playlister you had to parse some files each time
+these essentially served as your database (an in memory database)
+we use a database because it’s faster to store and retrieve data, and easier to search for specific bits of data
 
-Include what students are assumed to know heading into this lecture.
+basic structure of an application -> data, behavoir, UI
+tell the story of methods, classes, objects, web framework, persistence
 
-# Objectives
+goal is to create a system where we can persist our data, and represent that data using objects, and then interact with the data
 
-Students will be able to:
+-Databases use the client/server model
+-Local dev mainly on your own computer
+-Production mainly connecting to a remote server
+-Similar to local web dev/production dev
 
-  * Insert *concrete* skills students will walk away with.
-  * Even better, write a lab/quiz in here that tests these skills
+networking, TCP, Unix Socket, SSH
+any computer on the internet can communicate with any other computer
+loopback interface (“localhost” vs 127.0.0.1 vs 0.0.0.0) “/etc/hosts"
+just need the ip address and the port, one computer is the server (listener) and one is the client
+there are many clients to a database (mysql from the command line, psequel, pgadmin, sequel pro, sqlite database browser, ruby, python)
+SQL is the language we use to talk to a database
+there are many implementations of sql (sqlite, postgres, mysql, oracle, ms sequel server)
+there are also NoSql databases (cassandra, voldemort, riak, mongodb)
+where are the files?
+i couldn’t figure out where my database was...
+ http://vimeo.com/36573119 (sqlite has an actual file, everything else is binary)
+how do i move files (mysqldump)
 
-Students will understand:
+Rails apps are CRUD apps
+create = INSERT
+read = SELECT
+update = UPDATE
+delete = DELETE
 
-  * Add high level concepts
+-server = ps aux | grep postgres
 
-# Script
+remote connection from command line
+psql -h localhost -d fis_sql_book
 
-## Presenting The Conflict
+create db from command line
+psql -c "CREATE DATABASE fis_sql_book"
 
-What problem is this lecture solving? Our students are intelligent and need to
-know *why* they are learning something before investing effort.
+command line
+createdb magical (my symlinks are messed up)
+psql -d magical -f 01_create_wizards.sql (run a sql file against a db)
+psql -d magical (login to specific database)
+\d wizards (show table)
 
-## Grounding In What We Know
+connect and type help
 
-Before you move on, make sure we review the relavent materials needed. For
-example if you are about to go into Objects, do a quick review of what a method
-is.
+SQL servers have multiple dbs.
+Each db has multiple tables
+Tables have multiple columns and rows
+Tables are like spreadsheets
 
-## New Material
+postgres specific commands
+\dt (list tables)
+\l
 
-### Topic
+Ok to forget the syntax, remember the concepts
+CRUD
+You'll never use any of this but select (ORMs write the rest)
+-Create table
 
-Be specific! [Link to small code](code_samples/001.sample.rb) examples in the `code_samples` folder that
-demonstrate what you are teaching.
+CREATE TABLE wizards(
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  age INTEGER
+);
 
-#### Common Metaphors/Techniques
+TYPES!!!!!!
 
-Cover any metaphors or teaching techniques that work well.
+everyone add your favorite wizard
 
-### Topic 2
+-Drop table
 
-## Conclusion
+-Alter table
 
-An effective conclusion should:
+- insert
+INSERT INTO wizards (name, age, color) VALUES ('Bigby', 40, 'Yellow');
 
-  * Reemphasizes and clarifies the objective that the students have learned.
-  * Reemphasizes the significance of that objective.
-  * Assesses students’ mastery of—or progress toward—that objective (if not done earlier). 
-  * Possibly add a teaser for the next "conflict"
+- Select
+
+select *
+what if we have multiple people with the same name
+select distinct name, age (distinct for multiple attributes)
+
+- Where
+select * from wizards where name = 'harry' and age > 10
+
+-Update
+(make sure you use a where clause)
+UPDATE wizards SET age=86 WHERE name = 'Eriadna';
+
+-Delete
+(make sure you use a where clause)
+DELETE FROM wizards WHERE name = 'Bigby'
+
+Relations/Joins/Modeling Data
+Let's add powers (power 1-10)
+If we add powers to the wizards table what problems would we have?
+-potentially a lot of null values for wizards with only one power
+-what if powers have attributes themselves (power_1_damage)
+-how would we look up all wizards who have a certain power?
+
+move powers to new table with foreign key
+
+CREATE TABLE powers(
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  damage INTEGER,
+  wizard_id INTEGER,
+  FOREIGN KEY (wizard_id) REFERENCES wizards (id)
+);
+
+Insert your favorite power
+
+How can we get the powers for each wizard
+SELECT *
+FROM wizards
+INNER JOIN powers
+ON wizards.id = powers.wizard_id;
+
+What if a wizard has no power
+-left join (common) (opposite of right join?)
+
+What if a power has no wizard?
+-right join(uncommon)
+
+What if multiple wizards have the same power?
+(many to many)
+(need a join table)
+
+Show any powers not belonging to any wizard?
+Show wizards that don't have a power?
+
+GROUP BY
+Show only wizards with more than one power?
+
+
+select wizards.name, count(wizards.name) as times from wizards
+join all_powers
+on wizards.id = all_powers.wizard_id
+group by wizards.name
+having count(wizards.name) > 1
